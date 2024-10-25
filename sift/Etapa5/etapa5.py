@@ -61,83 +61,17 @@ for i, imagem in enumerate(sift[1]):
         if sift[1].index(imagem) != 0:
             sift[1][i][j][2] = int(sift[1][i][j][2] * proporcao_media)
         ponto = []
-        sift[1][i][j][2] = 0
+        # sift[1][i][j][2] = 0
         malha.append(sift[1][i][j])
     malhas.append(malha)
     
-p = []
-def capturar_coordenadas(event, x, y, flags, param):
-    if event == cv2.EVENT_LBUTTONDOWN:  # Verifica se o evento é um clique do botão esquerdo do mouse
-        print(f"Coordenadas: x={x}, y={y}")
-        p.append([x,y,depth[1][x][y]])
-im = cv2.imread('P:/Vscodigos/sift/Etapa5/imgs/202.jpg')  # Substitua 'imagem.jpg' pelo caminho da sua imagem
-largura2 = int(500)
-altura2 = int(500)
-dimensoes2 = (largura2, altura2)
-im = cv2.resize(im, dimensoes2, interpolation=cv2.INTER_AREA) 
-cv2.imshow("Imagem", im)
-cv2.setMouseCallback("Imagem", capturar_coordenadas)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+merge = []
+output_file = "malhas.txt"
+with open(output_file, 'w') as f:
+    for i in malhas:
+        f.write(str(i))
+        # for j in i:
 
-# Criar uma única janela para visualização
-vis = o3d.visualization.Visualizer()
-vis.create_window()
-
-# Mostra as malhas
-for m in malhas:
-    x = []
-    y = []
-    z = []
-    for ponto in p:
-        x.append(ponto[0])
-        y.append(ponto[1])
-        z.append(ponto[2])
-    # print(z)
-    x = np.array(x)
-    y = np.array(y)
-    z = np.array(z)
-    
-    tri = Delaunay(np.array([x, y]).T)
-    triangles = tri.simplices
-    imagem_textura = Image.open("P:/Vscodigos/sift/Etapa5/imgs/202.jpg")  # Substitua pelo caminho da sua imagem de textura
-    imagem_textura = np.asarray(imagem_textura) / 255.0  # Normalizar a imagem
-    vertices = np.vstack((x, y, z)).T
-
-    malha = o3d.geometry.TriangleMesh()
-    malha.vertices = o3d.utility.Vector3dVector(vertices)
-    malha.triangles = o3d.utility.Vector3iVector(triangles)
-
-    u = (x - x.min()) / (x.max() - x.min())  # Normalizar coordenadas x para [0, 1]
-    v = (y - y.min()) / (y.max() - y.min())  # Normalizar coordenadas y para [0, 1]
-    uv = np.vstack((u, v)).T
-    malha.triangle_uvs = o3d.utility.Vector2dVector(uv[triangles].reshape(-1, 2))
-
-    malha.textures = [o3d.geometry.Image((imagem_textura * 255).astype(np.uint8))]
-
-    vis.add_geometry(malha)  # Adiciona cada malha à visualização
-
-# Após adicionar todas as malhas, inicia a visualização
-vis.run()
-vis.destroy_window()
-    
-    # np.random.seed(0)  # Para reprodutibilidade
-    # # points = np.random.rand(30, 3)  # 30 pontos aleatórios em 3D
-    # points = np.array(p)
-    # tri = Delaunay(points[:, :2])  # Usamos somente x e y para a triangulação
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.plot_trisurf(points[:, 0], points[:, 1], points[:, 2], triangles=tri.simplices, cmap='viridis', edgecolor='k')
-    # ax.set_xlabel('Eixo X')
-    # ax.set_ylabel('Eixo Y')
-    # ax.set_zlabel('Eixo Z')
-    # plt.show()
-    
-    
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.scatter(x, y, z, c='b', marker='o')
-    # ax.set_xlabel('Eixo X')
-    # ax.set_ylabel('Eixo Y')
-    # ax.set_zlabel('Eixo Z')
-    # plt.show()
+            # f.write(str(j))
+            # f.write("\n")
+        f.write("--------------------\n")
