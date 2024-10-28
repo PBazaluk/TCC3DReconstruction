@@ -5,8 +5,8 @@ import os
 import matplotlib.pyplot as plt
 
 # Diretórios das imagens e de saída
-image_dir = 'P:/Vscodigos/sift/Etapa2/imgs'
-image_out = 'P:/Vscodigos/sift/Etapa2/imgswd'
+image_dir = 'P:/GitHub/TCC3DReconstruction/sift/Etapa2/imgs'
+image_out = 'P:/GitHub/TCC3DReconstruction/sift/Etapa2/imgswd'
 
 # Listar todos os arquivos de imagem no diretório
 image_files = glob.glob(os.path.join(image_dir, '*.jpg'))
@@ -24,8 +24,8 @@ img = 0
 
 
 img_shadow = 0
-path_img = "P:/Vscodigos/sift/Etapa2/imgsombra/202_img_depth.png"
-img_shadow = cv.imread(path_img)
+# path_img = "P:/Vscodigos/sift/Etapa2/imgsombra/202_img_depth.png"
+# img_shadow = cv.imread(path_img)
 img_draw = 0
 # Processar cada imagem
 for file in image_files:
@@ -145,10 +145,10 @@ des_matches_img2 = []
 
 # Iterar sobre os matches filtrados
 cont = 0
-matriz = [[0 for _ in range(4)] for _ in range(100)]
+matriz = [[0 for _ in range(4)] for _ in range(1000)]
 for match in matches_filtrados:
     
-    #print(cont)
+    # print(cont)
     idx_img1 = match.queryIdx
     idx_img2 = match.trainIdx
     kp_img1 = imgs_kp[lista[0]][idx_img1]
@@ -218,10 +218,10 @@ altura2 = int(500)
 dimensoes2 = (largura2, altura2)
 
 # Redimensionar a imagem
-img_redimensionada1 = cv.resize(img_shadow, dimensoes1, interpolation=cv.INTER_AREA)
+# img_redimensionada1 = cv.resize(img_shadow, dimensoes1, interpolation=cv.INTER_AREA)
 img_redimensionada2 = cv.resize(img, dimensoes2, interpolation=cv.INTER_AREA)
 
-i = cv.hconcat([img_redimensionada1, img_redimensionada2])
+i = cv.hconcat([img_redimensionada2])
 # cv.imshow('Imagem', i)
 # cv.waitKey(0)
 plt.figure(figsize=(15, 10))
