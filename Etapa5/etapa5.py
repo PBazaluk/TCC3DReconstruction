@@ -189,9 +189,6 @@ height, width, _ = img.shape
 # Calcular a proporção
 proportion = width / height
 
-# Exibir as dimensões e a proporção
-print(f'Largura: {width}, Altura: {height}, Proporção: {proportion}')
-
 # Gerar a malha de Delaunay 2D
 delaunay, points, terc_col = gerar_malha_delaunay_2d(d, SPACE_SIZE)
 
