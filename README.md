@@ -11,7 +11,7 @@ A imagem de saída que será utilizada nas próximas etapas é gerada na pasta S
 ## Etapa 4
 ### Entrada
 Dentro da pasta Etapa4, coloque a imagem de saída da etapa 2-3 na pasta Entrada, e execute o comando
-```python etapa4.py```
+```python etapa4.py --encoder vitl --img-path "\Entrada" --outdir "\Saida"```
 ### Saída
 O arquivo de saída, com a nuvem de pontos, que será utilizada na próxima etapa é gerado na pasta Saida
 
