@@ -1,79 +1,95 @@
-import numpy as np
 import cv2 as cv
-import glob
+import numpy as np
 import os
-import matplotlib.pyplot as plt
+import glob
 
-# Obter o diretório atual do script
-current_dir = os.path.dirname(os.path.abspath(__file__))
+def load_images(image_paths):
+    images = []
+    for path in image_paths:
+        img = cv.imread(path)
+        if img is not None:
+            images.append(img)
+    return images
 
-# Diretórios das imagens e de saída
-image_dir = os.path.join(current_dir, 'Entrada')
-image_out = os.path.join(current_dir, 'Saida')
+def stitch_images(images):
+    # Inicializar a imagem composta com a primeira imagem
+    composed_image = images[0]
+    altura, largura = composed_image.shape[:2]
 
-# Listar todos os arquivos de imagem no diretório
-image_files = glob.glob(os.path.join(image_dir, '*.jpg'))
-print("image files:", image_files)
+    for i in range(1, len(images)):
+        img2 = images[i]
+        altura2, largura2 = img2.shape[:2]
 
-# Carregar as imagens para combinar
-img1 = cv.imread(image_files[0])
-img2 = cv.imread(image_files[1])
+        # Detectar pontos chave e calcular a homografia
+        sift = cv.SIFT_create()
+        kp1, des1 = sift.detectAndCompute(composed_image, None)
+        kp2, des2 = sift.detectAndCompute(img2, None)
+        bf = cv.BFMatcher()
+        matches = bf.knnMatch(des1, des2, k=2)
 
-# Converter as imagens para escala de cinza
-gray1 = cv.cvtColor(img1, cv.COLOR_BGR2GRAY)
-gray2 = cv.cvtColor(img2, cv.COLOR_BGR2GRAY)
+        # Aplicar a razão de Lowe para selecionar boas correspondências
+        good_matches = []
+        for m, n in matches:
+            if m.distance < 0.75 * n.distance:
+                good_matches.append(m)
 
-# Criar o detector SIFT
-sift = cv.SIFT_create()
+        src_pts = np.float32([kp1[m.queryIdx].pt for m in good_matches]).reshape(-1, 2)
+        dst_pts = np.float32([kp2[m.trainIdx].pt for m in good_matches]).reshape(-1, 2)
 
-# Detectar keypoints e calcular descritores para as duas imagens
-kp1, des1 = sift.detectAndCompute(gray1, None)
-kp2, des2 = sift.detectAndCompute(gray2, None)
+        H, _ = cv.findHomography(src_pts, dst_pts, cv.RANSAC, 5.0)
 
-# Criar o objeto BFMatcher para encontrar correspondências entre os descritores
-bf = cv.BFMatcher(cv.NORM_L2, crossCheck=True)
+        # Transformar a imagem composta
+        altura_total = max(altura, altura2)
+        largura_total = largura + largura2
+        composed_image = cv.warpPerspective(composed_image, H, (largura_total, altura_total))
 
-# Encontra as correspondências entre os descritores das duas imagens
-matches = bf.match(des1, des2)
-matches = sorted(matches, key=lambda x: x.distance)
+        # Colocar a próxima imagem na composição
+        composed_image[0:altura2, 0:largura2] = img2
 
-# Controle o número de correspondências a serem usadas para a matriz homográfica
-numero_de_matches = 50  # Altere este valor para controlar quantas correspondências deseja usar
+        # Atualizar as dimensões da imagem composta
+        altura, largura = composed_image.shape[:2]
 
-# Obter os pontos correspondentes das correspondências
-src_pts = np.float32([kp1[m.queryIdx].pt for m in matches[:numero_de_matches]]).reshape(-1, 1, 2)
-dst_pts = np.float32([kp2[m.trainIdx].pt for m in matches[:numero_de_matches]]).reshape(-1, 1, 2)
+    return composed_image
 
-# Calcular a matriz homográfica
-H, mask = cv.findHomography(src_pts, dst_pts, cv.RANSAC, 5.0)
+def main(image_paths, output_path):
+    images = load_images(image_paths)
+    if len(images) < 2:
+        print("É necessário pelo menos duas imagens para compor.")
+        return
 
-# Usar a homografia para transformar a primeira imagem e compô-la com a segunda
-altura, largura = img2.shape[:2]
-img1_warped = cv.warpPerspective(img1, H, (largura * 2, altura))
+    composed_image = stitch_images(images)
 
-# Colocar a segunda imagem na composição ao lado da primeira imagem transformada
-img1_warped[0:altura, 0:largura] = img2
+    # Converter a imagem resultante para escala de cinza
+    gray_warped = cv.cvtColor(composed_image, cv.COLOR_BGR2GRAY)
 
-# Converter a imagem resultante para escala de cinza
-gray_warped = cv.cvtColor(img1_warped, cv.COLOR_BGR2GRAY)
+    # Encontrar a região não preta
+    _, thresh = cv.threshold(gray_warped, 1, 255, cv.THRESH_BINARY)
+    contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    x, y, w, h = cv.boundingRect(contours[0])
 
-# Encontrar a região não preta
-_, thresh = cv.threshold(gray_warped, 1, 255, cv.THRESH_BINARY)
-contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-x, y, w, h = cv.boundingRect(contours[0])
+    # Recortar a imagem para remover as áreas pretas
+    img_final = composed_image[y:y+h, x:x+w]
 
-# Recortar a imagem para remover as áreas pretas
-img_final = img1_warped[y:y+h, x:x+w]
+    # Exibir a imagem final
+    cv.imshow('Imagem Final', img_final)
+    cv.waitKey(0)
+    cv.destroyAllWindows()
 
-# Redimensionar a imagem para 500x500 pixels
-img_final_resized = cv.resize(img_final, (500, 500))
+    # Salvar a imagem composta em um arquivo
+    cv.imwrite(output_path, img_final)
+    print(f'Imagem composta salva em: {output_path}')
 
-# Exibir a imagem final
-cv.imshow('Imagem Final', img_final_resized)
-cv.waitKey(0)
-cv.destroyAllWindows()
+if __name__ == "__main__":
+    # Obter o diretório atual do script
+    current_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Salvar a imagem composta em um arquivo
-output_path = os.path.join(image_out, 'imagem_composta.jpg')
-cv.imwrite(output_path, img_final)
-print(f'Imagem composta salva em: {output_path}')
+    # Diretórios das imagens e de saída
+    image_dir = os.path.join(current_dir, 'Entrada')
+    image_out = os.path.join(current_dir, 'Saida')
+
+    # Listar todos os arquivos de imagem no diretório
+    image_files = glob.glob(os.path.join(image_dir, '*.jpg'))
+    print("image files:", image_files)
+
+    output_path = os.path.join(image_out, 'imagem_composta.jpg')
+    main(image_files, output_path)
