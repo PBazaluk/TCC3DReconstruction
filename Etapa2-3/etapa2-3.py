@@ -71,9 +71,9 @@ def main(image_paths, output_path):
     img_final = composed_image[y:y+h, x:x+w]
 
     # Exibir a imagem final
-    cv.imshow('Imagem Final', img_final)
-    cv.waitKey(0)
-    cv.destroyAllWindows()
+    # cv.imshow('Imagem Final', img_final)
+    # cv.waitKey(0)
+    # cv.destroyAllWindows()
 
     # Salvar a imagem composta em um arquivo
     cv.imwrite(output_path, img_final)
