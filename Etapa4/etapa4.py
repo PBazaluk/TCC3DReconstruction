@@ -6,8 +6,29 @@ from scipy.spatial import Delaunay
 NUM_VERTICES = 20
 SPACE_SIZE = 500
 IMG_PATH = "Entrada/imagem_composta.jpg"  # Substitua pelo caminho da sua imagem
+poly = vtk.vtkPolyData()
+
+def exportar_para_obj(nome_arquivo, polydata, nome_textura=IMG_PATH):
+    # Criação do escritor de arquivos OBJ
 
 
+    print(polydata.GetNumberOfPoints())
+    writer = vtk.vtkOBJWriter()
+    writer.SetFileName(f"{nome_arquivo}.obj")
+    writer.SetInputData(polydata)  # Define o vtkPolyData como entrada
+
+    
+    writer.Write()
+    print(f"Arquivo OBJ exportado para {nome_arquivo}.obj")
+
+    
+    if nome_textura:
+        mtl_filename = f"{nome_arquivo}.mtl"
+        with open(mtl_filename, "w") as mtl_file:
+            mtl_file.write(f"newmtl material_0\n")
+            mtl_file.write(f"map_Kd {nome_textura}\n")
+        print(f"Arquivo MTL exportado para {mtl_filename}")
+        
 # Função para criar uma linha a partir de pontos
 def create_line(start_point, end_point, color):
     points = vtk.vtkPoints()
@@ -140,6 +161,10 @@ def aplicar_textura_vtk(img, delaunay, points, terc_col):
     polydata.SetPoints(points_vtk)
     polydata.SetPolys(triangles)
     polydata.GetPointData().SetTCoords(texture_coords)
+    
+    poly.SetPoints(points_vtk)
+    poly.SetPolys(triangles)
+    poly.GetPointData().SetTCoords(texture_coords)
 
     # Mapper para o mapeamento de textura
     mapper = vtk.vtkPolyDataMapper()
@@ -168,8 +193,8 @@ def aplicar_textura_vtk(img, delaunay, points, terc_col):
     # renderer.AddActor(z_axis)
     renderer.SetBackground(1, 1, 1)
 
-    render_window.Render()
-    render_interactor.Start()
+    # render_window.Render()
+    # render_interactor.Start()
 
 # Abre o arquivo em modo de leitura
 with open('Entrada/resultado_depth.txt', 'r') as file:
@@ -194,3 +219,5 @@ delaunay, points, terc_col = gerar_malha_delaunay_2d(d, SPACE_SIZE)
 
 # Aplicar a textura e exibir a malha 3D com VTK
 aplicar_textura_vtk(img, delaunay, points, terc_col)
+
+exportar_para_obj("Saida/malha_3d", poly, "Saida/textura.jpg")
